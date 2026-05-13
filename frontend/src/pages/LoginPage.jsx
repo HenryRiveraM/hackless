@@ -1,4 +1,52 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import * as authService from '../services/authService';
+
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const result = await authService.login(email, password);
+
+      if (result.success) {
+        // Redirigir al panel de control (o a donde corresponda)
+        navigate('/dashboard');
+      } else {
+        setError(result.message || 'Error al iniciar sesión');
+      }
+    } catch (err) {
+      setError('Error inesperado. Intenta más tarde.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    const result = await authService.loginWithGoogle();
+    if (!result.success) {
+      setError(result.message);
+    }
+  };
+
+  const handleSSO = async () => {
+    setError('');
+    const result = await authService.loginWithSSO();
+    if (!result.success) {
+      setError(result.message);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#f7f9fb] text-[#191c1e]">
       <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-[#004ac6] to-[#00668a] relative items-center justify-center p-16 overflow-hidden">
@@ -49,7 +97,13 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-[#434655] px-1">
                 Email
@@ -62,6 +116,10 @@ export default function LoginPage() {
                   className="w-full pl-12 pr-4 py-3.5 bg-[#f2f4f6] border border-[#c3c6d7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                   placeholder="nombre@empresa.com"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -83,19 +141,30 @@ export default function LoginPage() {
                 <input
                   className="w-full pl-12 pr-12 py-3.5 bg-[#f2f4f6] border border-[#c3c6d7] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#004ac6]/20 focus:border-[#004ac6]"
                   placeholder="••••••••"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
                 />
-                <button className="absolute right-4 top-1/2 -translate-y-1/2 text-[#737686]" type="button">
-                  <span className="material-symbols-outlined">visibility</span>
+                <button
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#737686] hover:text-[#004ac6]"
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  <span className="material-symbols-outlined">
+                    {showPassword ? 'visibility' : 'visibility_off'}
+                  </span>
                 </button>
               </div>
             </div>
 
             <button
-              className="w-full bg-[#004ac6] hover:bg-[#004ac6]/90 text-white font-semibold py-4 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              className="w-full bg-[#004ac6] hover:bg-[#004ac6]/90 text-white font-semibold py-4 rounded-xl shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               type="submit"
+              disabled={loading}
             >
-              <span>Iniciar sesión</span>
+              <span>{loading ? 'Iniciando sesión...' : 'Iniciar sesión'}</span>
               <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
 
@@ -108,10 +177,20 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <button className="py-3 px-4 border border-[#c3c6d7] rounded-xl text-sm hover:bg-[#e6e8ea]">
+              <button
+                className="py-3 px-4 border border-[#c3c6d7] rounded-xl text-sm hover:bg-[#e6e8ea] disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={loading}
+              >
                 Google
               </button>
-              <button className="py-3 px-4 border border-[#c3c6d7] rounded-xl text-sm hover:bg-[#e6e8ea] flex justify-center gap-2">
+              <button
+                className="py-3 px-4 border border-[#c3c6d7] rounded-xl text-sm hover:bg-[#e6e8ea] flex justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={handleSSO}
+                disabled={loading}
+              >
                 <span className="material-symbols-outlined">terminal</span>
                 SSO
               </button>
@@ -121,9 +200,9 @@ export default function LoginPage() {
           <div className="mt-12 text-center">
             <p className="text-sm text-[#434655]">
               ¿No tienes una cuenta?
-              <a className="text-[#004ac6] font-bold hover:underline ml-1" href="#">
+              <Link to="/register" className="text-[#004ac6] font-bold hover:underline ml-1">
                 Crear cuenta
-              </a>
+              </Link>
             </p>
           </div>
         </div>
