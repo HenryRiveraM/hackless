@@ -1,6 +1,72 @@
-import { Link } from "react-router-dom";
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import * as authService from '../services/authService';
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    nombre: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    // Validaciones básicas
+    if (!formData.nombre || !formData.email || !formData.password) {
+      setError('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await authService.register(
+        formData.nombre,
+        formData.email,
+        formData.password
+      );
+
+      if (result.success) {
+        setSuccess('Cuenta creada exitosamente. Redirigiendo...');
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
+      } else {
+        setError(result.message || 'Error al crear la cuenta');
+      }
+    } catch (err) {
+      setError('Error inesperado. Intenta más tarde.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-[#f7f9fb] text-[#191c1e] min-h-screen flex flex-col">
       <header className="bg-[#f7f9fb] border-b border-[#c3c6d7] shadow-sm sticky top-0 z-50">
@@ -97,29 +163,61 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input label="Company Name" placeholder="e.g. Acme Corp" />
-              <Select label="Industry" />
+            <form className="grid grid-cols-1 md:grid-cols-2 gap-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="md:col-span-2 p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
 
-              <Input label="NIT/ID Number" placeholder="Tax Identification" />
-              <Input label="Admin Name" placeholder="Full legal name" />
+              {success && (
+                <div className="md:col-span-2 p-4 bg-green-100 border border-green-300 rounded-xl text-green-700 text-sm">
+                  {success}
+                </div>
+              )}
 
               <Input
-                label="Corporate Email"
-                placeholder="admin@company.com"
-                type="email"
-                className="md:col-span-2"
+                label="Nombre Completo"
+                placeholder="Tu nombre completo"
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleInputChange}
+                disabled={loading}
               />
 
-              <PasswordInput label="Password" />
-              <PasswordInput label="Confirm Password" />
+              <Input
+                label="Email"
+                placeholder="tu@email.com"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                disabled={loading}
+              />
+
+              <PasswordInput
+                label="Contraseña"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                disabled={loading}
+              />
+
+              <PasswordInput
+                label="Confirmar Contraseña"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                disabled={loading}
+              />
 
               <div className="md:col-span-2 mt-4">
                 <button
-                  className="w-full bg-[#004ac6] text-white py-4 rounded-xl text-xl font-semibold shadow-md hover:bg-[#004ac6]/90 hover:shadow-lg transition-all active:scale-[0.98] flex justify-center items-center gap-2"
+                  className="w-full bg-[#004ac6] text-white py-4 rounded-xl text-xl font-semibold shadow-md hover:bg-[#004ac6]/90 hover:shadow-lg transition-all active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   type="submit"
+                  disabled={loading}
                 >
-                  <span>Crear cuenta</span>
+                  <span>{loading ? 'Creando cuenta...' : 'Crear cuenta'}</span>
                   <span className="material-symbols-outlined">arrow_forward</span>
                 </button>
               </div>
@@ -186,47 +284,50 @@ function TrustItem({ icon, title, children, bg, text }) {
   );
 }
 
-function Input({ label, placeholder, type = "text", className = "" }) {
+function Input({ label, placeholder, type = "text", className = "", name, value, onChange, disabled = false }) {
   return (
     <div className={`flex flex-col gap-2 ${className}`}>
       <label className="text-sm font-semibold text-[#434655]">{label}</label>
       <input
-        className="w-full px-4 py-3 rounded-xl border border-[#737686] hover:border-[#004ac6] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/20 transition-all outline-none bg-white"
+        className="w-full px-4 py-3 rounded-xl border border-[#737686] hover:border-[#004ac6] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/20 transition-all outline-none bg-white disabled:opacity-50 disabled:cursor-not-allowed"
         placeholder={placeholder}
         type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        required
       />
     </div>
   );
 }
 
-function Select({ label }) {
-  return (
-    <div className="flex flex-col gap-2">
-      <label className="text-sm font-semibold text-[#434655]">{label}</label>
-      <select className="w-full px-4 py-3 rounded-xl border border-[#737686] hover:border-[#004ac6] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/20 transition-all outline-none bg-white">
-        <option>Technology</option>
-        <option>Finance</option>
-        <option>Healthcare</option>
-        <option>Retail</option>
-        <option>Other</option>
-      </select>
-    </div>
-  );
-}
+function PasswordInput({ label, name, value, onChange, disabled = false }) {
+  const [showPassword, setShowPassword] = useState(false);
 
-function PasswordInput({ label }) {
   return (
     <div className="flex flex-col gap-2">
       <label className="text-sm font-semibold text-[#434655]">{label}</label>
       <div className="relative">
         <input
-          className="w-full px-4 py-3 pr-12 rounded-xl border border-[#737686] hover:border-[#004ac6] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/20 transition-all outline-none bg-white"
+          className="w-full px-4 py-3 pr-12 rounded-xl border border-[#737686] hover:border-[#004ac6] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/20 transition-all outline-none bg-white disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="••••••••"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
+          name={name}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          required
         />
-        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#737686] cursor-pointer">
-          visibility
-        </span>
+        <button
+          type="button"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737686] hover:text-[#004ac6]"
+          onClick={() => setShowPassword(!showPassword)}
+        >
+          <span className="material-symbols-outlined">
+            {showPassword ? 'visibility' : 'visibility_off'}
+          </span>
+        </button>
       </div>
     </div>
   );
