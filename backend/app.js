@@ -17,6 +17,10 @@ var alertasRouter = require('./routes/alertas');
 var incidenciasRouter = require('./routes/incidencias');
 var historialAlertasRouter = require('./routes/historialAlertasRoutes');
 var dashboardRouter = require('./routes/dashboardRoutes');
+var auditoriasRouter = require('./routes/auditoriasRoutes');
+var capacitacionRouter = require('./routes/capacitacionRoutes');
+var ayudaRouter = require('./routes/ayudaRoutes');
+var phishingRouter = require('./routes/phishingRoutes');
 
 // Rate limiting para proteger endpoints de autenticación
 const authLimiter = rateLimit({
@@ -66,6 +70,10 @@ app.use('/api/alertas', alertasRouter);
 app.use('/api/incidencias', incidenciasRouter);
 app.use('/api/historial-alertas', historialAlertasRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/auditorias', auditoriasRouter);
+app.use('/api/capacitacion', capacitacionRouter);
+app.use('/api/ayuda', ayudaRouter);
+app.use('/api/phishing', phishingRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
