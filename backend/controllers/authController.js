@@ -71,8 +71,26 @@ async function login(req, res) {
   }
 }
 
+async function me(req, res) {
+  try {
+    const idUsuario = req.user.id_usuario;
+    const user = await authService.obtenerUsuario(idUsuario);
+    
+    res.status(200).json({
+      success: true,
+      data: user
+    });
+  } catch (error) {
+    res.status(404).json({
+      success: false,
+      message: error.message
+    });
+  }
+}
+
 module.exports = {
   register,
   registerCompany,
-  login
+  login,
+  me
 };

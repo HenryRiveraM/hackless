@@ -193,9 +193,32 @@ function verifyToken(token) {
   }
 }
 
+/**
+ * Obtener usuario por ID
+ */
+async function obtenerUsuario(idUsuario) {
+  if (!idUsuario || isNaN(idUsuario)) {
+    throw new Error('ID de usuario inválido');
+  }
+  
+  const user = await userRepository.findById(idUsuario);
+  if (!user) {
+    throw new Error('Usuario no existe');
+  }
+  
+  return {
+    id_usuario: user.id_usuario,
+    nombre: user.nombre,
+    email: user.email,
+    rol: user.rol,
+    id_empresa: user.id_empresa
+  };
+}
+
 module.exports = {
   register,
   registerCompany,
   login,
-  verifyToken
+  verifyToken,
+  obtenerUsuario
 };

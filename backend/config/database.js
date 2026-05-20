@@ -32,8 +32,20 @@ async function queryOne(sql, values = []) {
   return rows.length > 0 ? rows[0] : null;
 }
 
+// Función para ejecutar consultas directamente (usado por repositories)
+// Retorna array destructurable [rows, fields]
+async function execute(sql, values = []) {
+  try {
+    return await pool.execute(sql, values);
+  } catch (error) {
+    console.error('Error en la base de datos:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   pool,
   query,
-  queryOne
+  queryOne,
+  execute
 };
