@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/userRepository');
 const companyRepository = require('../repositories/companyRepository');
+const empleadosRepository = require('../repositories/empleadosRepository');
 
 async function register(nombre, email, password) {
   if (!nombre || !email || !password) {
@@ -116,6 +117,21 @@ async function registerCompany(nombre_empresa, industria, nit, nombre_admin, ema
     
     if (!company || !company.id_empresa) {
       throw new Error('Error al crear empresa');
+    }
+    
+    // Crear empleado automáticamente para el admin de la empresa
+    try {
+      const empleado = await empleadosRepository.crear({
+        idEmpresa: company.id_empresa,
+        nombre: nombre_admin,
+        email: email_corporativo,
+        departamento: 'Administrador',
+        puntajeSeguridad: 0,
+        estadoCapacitacion: 'pendiente'
+      });
+    } catch (error) {
+      console.error('Error al crear empleado:', error.message);
+      // No lanzar error, continuar con el registro
     }
     
     return {

@@ -57,8 +57,7 @@ async function listarAlertas({
   const safePageSize = parseInt(pageSize) || 10;
   const safePage = parseInt(page) || 1;
   const offset = (safePage - 1) * safePageSize;
-  sql += ' LIMIT ? OFFSET ?';
-  params.push(safePageSize, offset);
+  sql += ` LIMIT ${safePageSize} OFFSET ${offset}`;
 
   return await db.query(sql, params);
 }

@@ -18,14 +18,14 @@ async function inicializarTablasPlantillas() {
         fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    await db.execute(createPlantillasTable);
+    await db.query(createPlantillasTable);
 
     // Verificar si campanas_phishing tiene columna id_plantilla
     const checkColumn = `
       SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
       WHERE TABLE_NAME = 'campanas_phishing' AND COLUMN_NAME = 'id_plantilla'
     `;
-    const [rows] = await db.execute(checkColumn);
+    const rows = await db.query(checkColumn);
 
     if (rows.length === 0) {
       const alterTable = `
@@ -36,7 +36,7 @@ async function inicializarTablasPlantillas() {
         REFERENCES phishing_plantillas(id_plantilla)
         ON DELETE SET NULL
       `;
-      await db.execute(alterTable);
+      await db.query(alterTable);
     }
 
     console.log('Tablas de phishing plantillas inicializadas correctamente');
@@ -46,12 +46,70 @@ async function inicializarTablasPlantillas() {
 }
 
 /**
+ * Obtener empresa por usuario
+ */
+async function obtenerEmpresaPorUsuario(idUsuario) {
+  try {
+    const sql = 'SELECT id_empresa FROM empresas WHERE id_usuario = ? AND estado = 1 LIMIT 1';
+    const result = await db.queryOne(sql, [idUsuario]);
+    return result ? { idEmpresa: result.id_empresa } : null;
+  } catch (error) {
+    throw new Error(`Error obteniendo empresa: ${error.message}`);
+  }
+}
+
+/**
+ * Obtener campañas de una empresa específica
+ */
+async function obtenerCampanasPorEmpresa(idEmpresa) {
+  try {
+    const sql = `
+      SELECT 
+        cp.id_campana,
+        cp.nombre,
+        cp.descripcion,
+        cp.asunto_email,
+        cp.estado_campana,
+        cp.fecha_inicio,
+        cp.fecha_fin,
+        COUNT(DISTINCT pe.id_empleado) as total_empleados,
+        COALESCE(SUM(CASE WHEN pev.tipo_evento = 'clic' THEN 1 ELSE 0 END), 0) as total_clicks,
+        COALESCE(SUM(CASE WHEN pev.tipo_evento = 'abierto' THEN 1 ELSE 0 END), 0) as total_abiertos,
+        COALESCE(SUM(CASE WHEN pev.tipo_evento = 'reportado' THEN 1 ELSE 0 END), 0) as total_reportados
+      FROM campanas_phishing cp
+      LEFT JOIN phishing_empleados pe ON cp.id_campana = pe.id_campana
+      LEFT JOIN phishing_eventos pev ON cp.id_campana = pev.id_campana
+      WHERE cp.id_empresa = ? AND cp.estado = 1
+      GROUP BY cp.id_campana
+      ORDER BY cp.fecha_inicio DESC
+    `;
+    const rows = await db.query(sql, [idEmpresa]);
+    
+    return rows.map(row => ({
+      id: row.id_campana,
+      nombre: row.nombre,
+      descripcion: row.descripcion,
+      asuntoEmail: row.asunto_email,
+      estadoCampana: row.estado_campana,
+      fechaInicio: row.fecha_inicio,
+      fechaFin: row.fecha_fin,
+      totalEmpleados: row.total_empleados || 0,
+      totalClicks: row.total_clicks || 0,
+      totalAbiertos: row.total_abiertos || 0,
+      totalReportados: row.total_reportados || 0
+    }));
+  } catch (error) {
+    throw new Error(`Error obteniendo campañas: ${error.message}`);
+  }
+}
+
+/**
  * Obtener todas las campañas con métricas
  * @returns {Promise<Array>}
  */
 async function obtenerCampanas() {
   try {
-    const query = `
+    const sql = `
       SELECT 
         cp.id_campana,
         cp.nombre,
@@ -70,7 +128,7 @@ async function obtenerCampanas() {
       GROUP BY cp.id_campana
       ORDER BY cp.fecha_inicio DESC
     `;
-    const [rows] = await db.execute(query);
+    const rows = await db.query(sql);
     
     return rows.map(row => ({
       id: row.id_campana,
@@ -116,7 +174,7 @@ async function obtenerCampanaPorId(idCampana) {
       WHERE cp.id_campana = ?
       GROUP BY cp.id_campana
     `;
-    const [rows] = await db.execute(query, [idCampana]);
+    const rows = await db.query(query, [idCampana]);
     if (rows.length === 0) return null;
     
     const row = rows[0];
@@ -157,7 +215,7 @@ async function crearCampana(data) {
         fecha_inicio
       ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(query, [
       data.idEmpresa,
       data.nombre,
       data.descripcion,
@@ -215,7 +273,7 @@ async function actualizarCampana(idCampana, data) {
     query += campos.join(', ') + ' WHERE id_campana = ?';
     params.push(idCampana);
 
-    const [result] = await db.execute(query, params);
+    const result = await db.query(query, params);
     return result.affectedRows > 0;
   } catch (error) {
     throw new Error(`Error actualizando campaña: ${error.message}`);
@@ -230,7 +288,7 @@ async function actualizarCampana(idCampana, data) {
 async function eliminarCampana(idCampana) {
   try {
     const query = 'DELETE FROM campanas_phishing WHERE id_campana = ?';
-    const [result] = await db.execute(query, [idCampana]);
+    const result = await db.query(query, [idCampana]);
     return result.affectedRows > 0;
   } catch (error) {
     throw new Error(`Error eliminando campaña: ${error.message}`);
@@ -249,7 +307,7 @@ async function obtenerEmpleadosCampana(idCampana) {
       FROM phishing_empleados pe
       WHERE pe.id_campana = ?
     `;
-    const [rows] = await db.execute(query, [idCampana]);
+    const rows = await db.query(query, [idCampana]);
     return rows.map(row => row.id_empleado);
   } catch (error) {
     throw new Error(`Error obteniendo empleados: ${error.message}`);
@@ -269,11 +327,11 @@ async function asignarEmpleados(idCampana, empleados) {
     for (const idEmpleado of empleados) {
       // Verificar si ya existe
       const checkQuery = 'SELECT id_empleado FROM phishing_empleados WHERE id_campana = ? AND id_empleado = ?';
-      const [checkRows] = await db.execute(checkQuery, [idCampana, idEmpleado]);
+      const checkRows = await db.query(checkQuery, [idCampana, idEmpleado]);
 
       if (checkRows.length === 0) {
         const insertQuery = 'INSERT INTO phishing_empleados (id_campana, id_empleado, estado_participacion) VALUES (?, ?, ?)';
-        await db.execute(insertQuery, [idCampana, idEmpleado, 'pendiente']);
+        await db.query(insertQuery, [idCampana, idEmpleado, 'pendiente']);
         asignados++;
       }
     }
@@ -299,7 +357,7 @@ async function crearEventoPhishing(data) {
         fecha_evento
       ) VALUES (?, ?, ?, ?)
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(query, [
       data.idCampana,
       data.idEmpleado,
       data.tipoEvento,
@@ -332,7 +390,7 @@ async function obtenerDashboardCampana(idCampana) {
       WHERE cp.id_campana = ?
       GROUP BY cp.id_campana
     `;
-    const [rows] = await db.execute(query, [idCampana]);
+    const rows = await db.query(query, [idCampana]);
     
     if (rows.length === 0) return null;
 
@@ -379,7 +437,7 @@ async function obtenerDetalleEmpleadosCampana(idCampana) {
       WHERE pe.id_campana = ?
       ORDER BY pev.fecha_evento DESC, e.id_empleado ASC
     `;
-    const [rows] = await db.execute(query, [idCampana]);
+    const rows = await db.query(query, [idCampana]);
 
     return rows.map(row => ({
       idEmpleado: row.id_empleado,
@@ -415,7 +473,7 @@ async function obtenerHistorialCampanas() {
       GROUP BY cp.id_campana
       ORDER BY cp.fecha_fin DESC
     `;
-    const [rows] = await db.execute(query);
+    const rows = await db.query(query);
 
     return rows.map(row => ({
       id: row.id_campana,
@@ -453,7 +511,7 @@ async function obtenerDetalleEmpleado(idEmpleado) {
       GROUP BY cp.id_campana
       ORDER BY cp.fecha_inicio DESC
     `;
-    const [rows] = await db.execute(query, [idEmpleado]);
+    const rows = await db.query(query, [idEmpleado]);
 
     let totalClicks = 0;
     let totalReportados = 0;
@@ -495,24 +553,6 @@ async function obtenerDetalleEmpleado(idEmpleado) {
 }
 
 /**
- * Obtener empresa de usuario
- * @param {number} idUsuario
- * @returns {Promise<number>}
- */
-async function obtenerEmpresaPorUsuario(idUsuario) {
-  try {
-    const query = `
-      SELECT id_empresa FROM empresas WHERE id_usuario = ? AND estado = 1
-    `;
-    const [rows] = await db.execute(query, [idUsuario]);
-    if (rows.length === 0) return null;
-    return rows[0].id_empresa;
-  } catch (error) {
-    throw new Error(`Error obteniendo empresa: ${error.message}`);
-  }
-}
-
-/**
  * Listar plantillas activas
  * @returns {Promise<Array>}
  */
@@ -528,7 +568,7 @@ async function listarPlantillas() {
       WHERE estado = 1
       ORDER BY fecha_registro DESC
     `;
-    const [rows] = await db.execute(query);
+    const rows = await db.query(query);
     return rows.map(row => ({
       idPlantilla: row.id_plantilla,
       nombre: row.nombre,
@@ -557,7 +597,7 @@ async function obtenerPlantillaPorId(idPlantilla) {
       FROM phishing_plantillas
       WHERE id_plantilla = ? AND estado = 1
     `;
-    const [rows] = await db.execute(query, [idPlantilla]);
+    const rows = await db.query(query, [idPlantilla]);
     if (rows.length === 0) return null;
     
     const row = rows[0];
@@ -589,7 +629,7 @@ async function validarEmpleadosEmpresa(idEmpresa, empleados) {
       WHERE id_empresa = ? AND id_empleado IN (${placeholders})
     `;
     const params = [idEmpresa, ...empleados];
-    const [rows] = await db.execute(query, params);
+    const rows = await db.query(query, params);
     
     return rows[0].total === empleados.length;
   } catch (error) {
@@ -616,7 +656,7 @@ async function crearEventosIniciales(idCampana, empleados) {
           fecha_evento
         ) VALUES (?, ?, 'enviado', NOW())
       `;
-      await db.execute(query, [idCampana, idEmpleado]);
+      await db.query(query, [idCampana, idEmpleado]);
       eventosCreados++;
     }
 
@@ -629,6 +669,7 @@ async function crearEventosIniciales(idCampana, empleados) {
 module.exports = {
   inicializarTablasPlantillas,
   obtenerCampanas,
+  obtenerCampanasPorEmpresa,
   obtenerCampanaPorId,
   crearCampana,
   actualizarCampana,

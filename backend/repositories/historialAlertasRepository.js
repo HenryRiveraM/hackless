@@ -13,7 +13,7 @@ class HistorialAlertasRepository {
       WHERE id_usuario = ? AND estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idUsuario]);
+    const rows = await db.query(query, [idUsuario]);
     return rows.length > 0 ? rows[0] : null;
   }
 
@@ -72,7 +72,7 @@ class HistorialAlertasRepository {
     query += ` LIMIT ? OFFSET ?`;
     params.push(pageSize, offset);
 
-    const [rows] = await db.execute(query, params);
+    const rows = await db.query(query, params);
     return rows;
   }
 
@@ -113,7 +113,7 @@ class HistorialAlertasRepository {
       params.push(searchTerm, searchTerm, searchTerm);
     }
 
-    const [rows] = await db.execute(query, params);
+    const rows = await db.query(query, params);
     return rows[0].total;
   }
 
@@ -137,7 +137,7 @@ class HistorialAlertasRepository {
         AND MONTH(fecha_resolucion) = MONTH(CURDATE())
     `;
 
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
 
     return {
       totalResueltasMes: rows[0].totalResueltasMes || 0,
@@ -172,7 +172,7 @@ class HistorialAlertasRepository {
       WHERE id_incidencia = ? AND id_empresa = ? AND estado = 1
     `;
 
-    const [rows] = await db.execute(query, [idIncidencia, idEmpresa]);
+    const rows = await db.query(query, [idIncidencia, idEmpresa]);
     return rows.length > 0 ? rows[0] : null;
   }
 
@@ -199,7 +199,7 @@ class HistorialAlertasRepository {
       WHERE id_incidencia = ? AND id_empresa = ? AND estado = 1
     `;
 
-    await db.execute(query, [
+    await db.query(query, [
       metodoResolucion,
       administradorResponsable,
       criticidadReducida,
@@ -225,14 +225,14 @@ class HistorialAlertasRepository {
       VALUES (?, ?, ?, NOW(), ?, 1, NOW())
     `;
 
-    const result = await db.execute(query, [
+    const result = await db.query(query, [
       idIncidencia,
       titulo,
       descripcion,
       tipoEvento
     ]);
 
-    return { idTimeline: result[0].insertId };
+    return { idTimeline: result?.insertId || result[0]?.insertId };
   }
 
   /**
@@ -247,7 +247,7 @@ class HistorialAlertasRepository {
       WHERE id_incidencia = ? AND ejecutada = 0 AND estado = 1
     `;
 
-    await db.execute(query, [idIncidencia]);
+    await db.query(query, [idIncidencia]);
   }
 
   /**
@@ -274,7 +274,7 @@ class HistorialAlertasRepository {
       ORDER BY fecha_resolucion DESC
     `;
 
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     return rows;
   }
 }

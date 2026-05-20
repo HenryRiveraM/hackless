@@ -19,9 +19,9 @@ let genAI = null;
  */
 function inicializarGenAI() {
   if (!genAI && GoogleGenerativeAI) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.SOPORTE_AI_API_KEY || process.env.GEMINI_API_KEY;
     if (apiKey) {
-      genAI = new GoogleGenerativeAI(apiKey);
+      genAI = new GoogleGenerativeAI(apiKey.trim());
     }
   }
   return genAI;
@@ -55,7 +55,7 @@ Si necesita asistencia personalizada, sugiere crear un ticket de soporte.
 Mantén un tono de ayuda y disponibilidad.`;
 
     // Llamar a Gemini
-    const model = genAIClient.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAIClient.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const respuesta = response.text();

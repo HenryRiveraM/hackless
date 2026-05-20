@@ -1,14 +1,16 @@
 import { Eye, MailWarning, Play, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import EmployeeSelector from '../components/EmployeeSelector';
 import { SelectInput, TextArea, TextInput } from '../components/FormControls';
 import { ConfirmDialog, EmptyState, LoadingBlock, Modal, PageHeader, Panel, StatusMessage, ToastStack } from '../components/Ui';
 import useToasts from '../hooks/useToasts';
-import { createCampaign, deleteCampaign, getCampaigns, getTemplates, simulateCampaign } from '../services/phishingService';
+import { createCampaign, deleteCampaign, getCampaigns, getEmployees, getTemplates, simulateCampaign } from '../services/phishingService';
 
 export default function PhishingPage() {
   const [campaigns, setCampaigns] = useState([]);
   const [templates, setTemplates] = useState([]);
-  const [form, setForm] = useState({ nombre: '', descripcion: '', asuntoEmail: '', idPlantilla: '', empleados: '' });
+  const [employees, setEmployees] = useState([]);
+  const [form, setForm] = useState({ nombre: '', descripcion: '', asuntoEmail: '', idPlantilla: '', empleados: [] });
   const [detail, setDetail] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,9 +22,10 @@ export default function PhishingPage() {
     setLoading(true);
     setError('');
     try {
-      const [campaignsData, templatesData] = await Promise.all([getCampaigns(), getTemplates()]);
+      const [campaignsData, templatesData, employeesData] = await Promise.all([getCampaigns(), getTemplates(), getEmployees()]);
       setCampaigns(campaignsData);
       setTemplates(templatesData);
+      setEmployees(employeesData);
       if (!form.idPlantilla && templatesData[0]) setForm((current) => ({ ...current, idPlantilla: String(templatesData[0].idPlantilla || templatesData[0].id_plantilla) }));
     } catch (err) {
       setError(err.message || 'No se pudo cargar phishing');
@@ -42,9 +45,8 @@ export default function PhishingPage() {
     setSaving(true);
     setError('');
     try {
-      const empleados = form.empleados.split(',').map((item) => Number(item.trim())).filter(Boolean);
-      await createCampaign({ ...form, idPlantilla: Number(form.idPlantilla), empleados });
-      setForm({ nombre: '', descripcion: '', asuntoEmail: '', idPlantilla: form.idPlantilla, empleados: '' });
+      await createCampaign({ ...form, idPlantilla: Number(form.idPlantilla), empleados: form.empleados });
+      setForm({ nombre: '', descripcion: '', asuntoEmail: '', idPlantilla: form.idPlantilla, empleados: [] });
       showToast({ title: 'Campaña creada' });
       await load();
     } catch (err) {
@@ -81,7 +83,7 @@ export default function PhishingPage() {
                       <Play size={14} />
                       Simular
                     </button>
-                    <button onClick={() => setDeleteTarget(campaign)} className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50" type="button">
+                    <button onClick={() => setDeleteTarget({ ...campaign, idCampana: campaign.id || campaign.idCampana || campaign.id_campana })} className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50" type="button">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -101,7 +103,11 @@ export default function PhishingPage() {
               onChange={(value) => setForm({ ...form, idPlantilla: value })}
               options={templates.length ? templates.map((template) => ({ value: String(template.idPlantilla || template.id_plantilla), label: template.nombre })) : [{ value: '', label: 'Sin plantillas' }]}
             />
-            <TextInput label="IDs empleados" required={false} placeholder="1,2,3" value={form.empleados} onChange={(value) => setForm({ ...form, empleados: value })} />
+            <EmployeeSelector
+              selected={form.empleados}
+              onSelect={(empleados) => setForm({ ...form, empleados })}
+              employees={employees}
+            />
             <TextArea label="Descripción" value={form.descripcion} onChange={(value) => setForm({ ...form, descripcion: value })} />
             <button disabled={saving} className="w-full rounded-lg bg-slate-900 px-4 py-3 text-sm font-black text-white hover:bg-slate-700 disabled:opacity-60">
               {saving ? 'Creando...' : 'Crear campaña'}
@@ -123,7 +129,7 @@ export default function PhishingPage() {
         description={`Vas a eliminar "${deleteTarget?.nombre || 'esta campaña'}".`}
         confirmLabel="Eliminar"
         onClose={() => setDeleteTarget(null)}
-        onConfirm={() => deleteCampaign(deleteTarget.idCampana || deleteTarget.id_campana).then(() => { setDeleteTarget(null); showToast({ title: 'Campaña eliminada' }); load(); })}
+        onConfirm={() => deleteCampaign(deleteTarget?.idCampana).then(() => { setDeleteTarget(null); showToast({ title: 'Campaña eliminada' }); load(); })}
       />
     </>
   );

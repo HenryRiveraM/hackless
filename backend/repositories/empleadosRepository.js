@@ -38,8 +38,7 @@ async function obtenerPorEmpresa({ idEmpresa, busqueda, departamento, estadoCapa
   const safePageSize = parseInt(pageSize) || 10;
   const safePage = parseInt(page) || 1;
   const offset = (safePage - 1) * safePageSize;
-  sql += ` ORDER BY fecha_registro DESC LIMIT ? OFFSET ?`;
-  params.push(safePageSize, offset);
+  sql += ` ORDER BY fecha_registro DESC LIMIT ${safePageSize} OFFSET ${offset}`;
   
   return query(sql, params);
 }

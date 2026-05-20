@@ -18,7 +18,7 @@ async function obtenerEmpresaPorUsuario(idUsuario) {
       WHERE id_usuario = ? AND estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idUsuario]);
+    const rows = await db.query(query, [idUsuario]);
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {
     throw new Error(`Error obteniendo empresa: ${error.message}`);
@@ -37,7 +37,7 @@ async function obtenerPuntajeSeguridad(idEmpresa) {
       FROM empleados
       WHERE id_empresa = ? AND estado = 1
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     return rows.length > 0 ? Math.round(rows[0].puntaje || 0) : 0;
   } catch (error) {
     throw new Error(`Error obteniendo puntaje de seguridad: ${error.message}`);
@@ -56,7 +56,7 @@ async function contarTotalEmpleados(idEmpresa) {
       FROM empleados
       WHERE id_empresa = ? AND estado = 1
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     return rows[0].total || 0;
   } catch (error) {
     throw new Error(`Error contando empleados: ${error.message}`);
@@ -76,7 +76,7 @@ async function contarEmpleadosCapacitados(idEmpresa) {
       WHERE id_empresa = ? AND estado = 1
       AND estado_capacitacion = 'completado'
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     return rows[0].total || 0;
   } catch (error) {
     throw new Error(`Error contando capacitados: ${error.message}`);
@@ -96,7 +96,7 @@ async function contarCapacitacionesPendientes(idEmpresa) {
       WHERE id_empresa = ? AND estado = 1
       AND estado_capacitacion IN ('pendiente', 'en_progreso', 'vencido')
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     return rows[0].total || 0;
   } catch (error) {
     throw new Error(`Error contando pendientes: ${error.message}`);
@@ -117,7 +117,7 @@ async function obtenerUltimaAuditoria(idEmpresa) {
       ORDER BY fecha_registro DESC
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     
     if (rows.length === 0) {
       return {
@@ -153,7 +153,7 @@ async function contarPuertosAbiertosDetectados(idEmpresa) {
         OR titulo LIKE '%puerto%'
       )
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     return rows[0].total || 0;
   } catch (error) {
     throw new Error(`Error contando puertos abiertos: ${error.message}`);
@@ -173,8 +173,8 @@ async function obtenerDatosPhishing(idEmpresa) {
       FROM empleados
       WHERE id_empresa = ? AND estado = 1
     `;
-    const [rowsTotal] = await db.execute(queryTotal, [idEmpresa]);
-    const totalEmpleados = rowsTotal[0].total || 0;
+    const rowsTotal = await db.query(queryTotal, [idEmpresa]);
+    const totalEmpleados = rowsTotal[0]?.total || 0;
     
     // Empleados seguros (no vencidos)
     const querySeguros = `
@@ -183,8 +183,8 @@ async function obtenerDatosPhishing(idEmpresa) {
       WHERE id_empresa = ? AND estado = 1
       AND estado_capacitacion != 'vencido'
     `;
-    const [rowsSeguros] = await db.execute(querySeguros, [idEmpresa]);
-    const seguros = rowsSeguros[0].total || 0;
+    const rowsSeguros = await db.query(querySeguros, [idEmpresa]);
+    const seguros = rowsSeguros[0]?.total || 0;
     
     // Empleados con clics (vencidos)
     const queryClics = `
@@ -193,8 +193,8 @@ async function obtenerDatosPhishing(idEmpresa) {
       WHERE id_empresa = ? AND estado = 1
       AND estado_capacitacion = 'vencido'
     `;
-    const [rowsClics] = await db.execute(queryClics, [idEmpresa]);
-    const clics = rowsClics[0].total || 0;
+    const rowsClics = await db.query(queryClics, [idEmpresa]);
+    const clics = rowsClics[0]?.total || 0;
     
     // Calcular porcentaje
     const porcentajeSeguro = totalEmpleados > 0 
@@ -229,7 +229,7 @@ async function obtenerProgresoCapacitacion(idEmpresa) {
       GROUP BY DATE_FORMAT(fecha_registro, '%Y-%m')
       ORDER BY mes ASC
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     
     // Mapear meses
     const mesesSpanish = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -313,7 +313,7 @@ async function listarRecomendaciones(idEmpresa, filtros = {}) {
         fecha_registro DESC
     `;
     
-    const [rows] = await db.execute(query, params);
+    const rows = await db.query(query, params);
     
     // Mapear salida
     return rows.map(row => ({
@@ -360,7 +360,7 @@ async function crearRecomendacion(idEmpresa, data) {
       data.accionUrl || null
     ];
     
-    const [result] = await db.execute(query, params);
+    const result = await db.query(query, params);
     return result.insertId;
   } catch (error) {
     throw new Error(`Error creando recomendación: ${error.message}`);
@@ -389,7 +389,7 @@ async function obtenerRecomendacionPorId(idRecomendacion, idEmpresa) {
       WHERE id_recomendacion = ? AND id_empresa = ? AND estado = 1
     `;
     
-    const [rows] = await db.execute(query, [idRecomendacion, idEmpresa]);
+    const rows = await db.query(query, [idRecomendacion, idEmpresa]);
     
     if (rows.length === 0) {
       return null;
@@ -426,7 +426,7 @@ async function actualizarEstadoRecomendacion(idRecomendacion, idEmpresa, estadoR
       WHERE id_recomendacion = ? AND id_empresa = ? AND estado = 1
     `;
     
-    const [result] = await db.execute(query, [estadoRecomendacion, idRecomendacion, idEmpresa]);
+    const result = await db.query(query, [estadoRecomendacion, idRecomendacion, idEmpresa]);
     
     return {
       affectedRows: result.affectedRows,
@@ -451,7 +451,7 @@ async function eliminarRecomendacion(idRecomendacion, idEmpresa) {
       WHERE id_recomendacion = ? AND id_empresa = ? AND estado = 1
     `;
     
-    const [result] = await db.execute(query, [idRecomendacion, idEmpresa]);
+    const result = await db.query(query, [idRecomendacion, idEmpresa]);
     
     return {
       affectedRows: result.affectedRows,

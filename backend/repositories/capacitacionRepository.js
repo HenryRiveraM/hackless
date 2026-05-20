@@ -7,19 +7,18 @@ const db = require('../config/database');
  */
 async function obtenerEmpresaPorUsuario(idUsuario) {
   try {
-    const query = `
+    const sql = `
       SELECT e.id_empresa, e.nombre_empresa
       FROM empresas e
       WHERE e.id_usuario = ? AND e.estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idUsuario]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idUsuario]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idEmpresa: row.id_empresa,
-      nombreEmpresa: row.nombre_empresa
+      idEmpresa: result.id_empresa,
+      nombreEmpresa: result.nombre_empresa
     };
   } catch (error) {
     throw new Error(`Error obteniendo empresa: ${error.message}`);
@@ -33,19 +32,18 @@ async function obtenerEmpresaPorUsuario(idUsuario) {
  */
 async function obtenerUsuarioPorId(idUsuario) {
   try {
-    const query = `
+    const sql = `
       SELECT id_usuario, email
       FROM usuarios
       WHERE id_usuario = ?
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idUsuario]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idUsuario]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idUsuario: row.id_usuario,
-      email: row.email
+      idUsuario: result.id_usuario,
+      email: result.email
     };
   } catch (error) {
     throw new Error(`Error obteniendo usuario: ${error.message}`);
@@ -60,21 +58,20 @@ async function obtenerUsuarioPorId(idUsuario) {
  */
 async function obtenerEmpleadoPorUsuarioEmail(idEmpresa, email) {
   try {
-    const query = `
+    const sql = `
       SELECT id_empleado, nombre, email, id_empresa
       FROM empleados
       WHERE id_empresa = ? AND email = ? AND estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idEmpresa, email]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idEmpresa, email]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idEmpleado: row.id_empleado,
-      nombre: row.nombre,
-      email: row.email,
-      idEmpresa: row.id_empresa
+      idEmpleado: result.id_empleado,
+      nombre: result.nombre,
+      email: result.email,
+      idEmpresa: result.id_empresa
     };
   } catch (error) {
     throw new Error(`Error obteniendo empleado: ${error.message}`);
@@ -88,7 +85,7 @@ async function obtenerEmpleadoPorUsuarioEmail(idEmpresa, email) {
  */
 async function obtenerResumenProgreso(idEmpleado) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         COUNT(*) as totalLecciones,
         SUM(CASE WHEN completado = 1 THEN 1 ELSE 0 END) as leccionesCompletadas,
@@ -96,15 +93,14 @@ async function obtenerResumenProgreso(idEmpleado) {
       FROM empleado_lecciones
       WHERE id_empleado = ?
     `;
-    const [rows] = await db.execute(query, [idEmpleado]);
+    const result = await db.queryOne(sql, [idEmpleado]);
     
-    if (rows.length === 0) return null;
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      totalLecciones: row.totalLecciones || 0,
-      leccionesCompletadas: row.leccionesCompletadas || 0,
-      progresoGeneral: row.progresoGeneral || 0
+      totalLecciones: result.totalLecciones || 0,
+      leccionesCompletadas: result.leccionesCompletadas || 0,
+      progresoGeneral: result.progresoGeneral || 0
     };
   } catch (error) {
     throw new Error(`Error obteniendo resumen: ${error.message}`);
@@ -118,7 +114,7 @@ async function obtenerResumenProgreso(idEmpleado) {
  */
 async function obtenerSiguienteLeccion(idEmpleado) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         l.id_leccion,
         l.titulo,
@@ -137,16 +133,15 @@ async function obtenerSiguienteLeccion(idEmpleado) {
       l.id_leccion ASC
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idEmpleado]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idEmpleado]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idLeccion: row.id_leccion,
-      titulo: row.titulo,
-      descripcion: row.descripcion,
-      duracionMinutos: row.duracion_minutos,
-      imagenUrl: row.imagen_url
+      idLeccion: result.id_leccion,
+      titulo: result.titulo,
+      descripcion: result.descripcion,
+      duracionMinutos: result.duracion_minutos,
+      imagenUrl: result.imagen_url
     };
   } catch (error) {
     throw new Error(`Error obteniendo siguiente lección: ${error.message}`);
@@ -160,7 +155,7 @@ async function obtenerSiguienteLeccion(idEmpleado) {
  */
 async function listarLecciones(idEmpleado) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         l.id_leccion,
         l.titulo,
@@ -175,7 +170,7 @@ async function listarLecciones(idEmpleado) {
       WHERE l.estado = 1
       ORDER BY l.id_leccion ASC
     `;
-    const [rows] = await db.execute(query, [idEmpleado]);
+    const rows = await db.query(sql, [idEmpleado]);
     
     return rows.map(row => ({
       idLeccion: row.id_leccion,
@@ -199,7 +194,7 @@ async function listarLecciones(idEmpleado) {
  */
 async function listarLeccionesCompletadas(idEmpleado) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         l.id_leccion,
         l.titulo,
@@ -215,7 +210,7 @@ async function listarLeccionesCompletadas(idEmpleado) {
       WHERE l.estado = 1 AND el.completado = 1
       ORDER BY el.fecha_completado DESC
     `;
-    const [rows] = await db.execute(query, [idEmpleado]);
+    const rows = await db.query(sql, [idEmpleado]);
     
     return rows.map(row => ({
       idLeccion: row.id_leccion,
@@ -240,7 +235,7 @@ async function listarLeccionesCompletadas(idEmpleado) {
  */
 async function obtenerCalificaciones(idEmpleado) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         categoria,
         puntaje
@@ -248,7 +243,7 @@ async function obtenerCalificaciones(idEmpleado) {
       WHERE id_empleado = ? AND estado = 1
       ORDER BY puntaje DESC
     `;
-    const [rows] = await db.execute(query, [idEmpleado]);
+    const rows = await db.query(sql, [idEmpleado]);
     
     return rows.map(row => ({
       categoria: row.categoria,
@@ -266,7 +261,7 @@ async function obtenerCalificaciones(idEmpleado) {
  */
 async function obtenerUltimaInsignia(idEmpleado) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         nombre,
         fecha_obtenida
@@ -275,13 +270,12 @@ async function obtenerUltimaInsignia(idEmpleado) {
       ORDER BY fecha_obtenida DESC
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idEmpleado]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idEmpleado]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      nombre: row.nombre,
-      fechaObtenida: row.fecha_obtenida
+      nombre: result.nombre,
+      fechaObtenida: result.fecha_obtenida
     };
   } catch (error) {
     throw new Error(`Error obteniendo última insignia: ${error.message}`);
@@ -296,7 +290,7 @@ async function obtenerUltimaInsignia(idEmpleado) {
  */
 async function obtenerEmpleadoLeccion(idEmpleado, idLeccion) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_empleado_leccion,
         id_empleado,
@@ -310,19 +304,18 @@ async function obtenerEmpleadoLeccion(idEmpleado, idLeccion) {
       WHERE id_empleado = ? AND id_leccion = ?
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idEmpleado, idLeccion]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idEmpleado, idLeccion]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idEmpleadoLeccion: row.id_empleado_leccion,
-      idEmpleado: row.id_empleado,
-      idLeccion: row.id_leccion,
-      progreso: row.progreso,
-      completado: row.completado === 1,
-      puntaje: row.puntaje,
-      fechaInicio: row.fecha_inicio,
-      fechaCompletado: row.fecha_completado
+      idEmpleadoLeccion: result.id_empleado_leccion,
+      idEmpleado: result.id_empleado,
+      idLeccion: result.id_leccion,
+      progreso: result.progreso,
+      completado: result.completado === 1,
+      puntaje: result.puntaje,
+      fechaInicio: result.fecha_inicio,
+      fechaCompletado: result.fecha_completado
     };
   } catch (error) {
     throw new Error(`Error obteniendo empleado-lección: ${error.message}`);
@@ -337,7 +330,7 @@ async function obtenerEmpleadoLeccion(idEmpleado, idLeccion) {
  */
 async function iniciarLeccion(idEmpleado, idLeccion) {
   try {
-    const query = `
+    const sql = `
       INSERT INTO empleado_lecciones (
         id_empleado,
         id_leccion,
@@ -349,7 +342,7 @@ async function iniciarLeccion(idEmpleado, idLeccion) {
       ON DUPLICATE KEY UPDATE
         fecha_inicio = IF(fecha_inicio IS NULL, NOW(), fecha_inicio)
     `;
-    const [result] = await db.execute(query, [idEmpleado, idLeccion]);
+    await db.query(sql, [idEmpleado, idLeccion]);
     
     // Obtener el ID del registro (puede ser insert o update)
     const leccion = await obtenerEmpleadoLeccion(idEmpleado, idLeccion);
@@ -368,29 +361,29 @@ async function iniciarLeccion(idEmpleado, idLeccion) {
  */
 async function actualizarProgreso(idEmpleado, idLeccion, data) {
   try {
-    let query = `
+    let sql = `
       UPDATE empleado_lecciones
       SET progreso = ?
     `;
     const params = [data.progreso];
 
     if (data.puntaje !== undefined && data.puntaje !== null) {
-      query += `, puntaje = ?`;
+      sql += `, puntaje = ?`;
       params.push(data.puntaje);
     }
 
     if (data.progreso >= 100) {
-      query += `, completado = 1, fecha_completado = NOW()`;
+      sql += `, completado = 1, fecha_completado = NOW()`;
     }
 
-    query += ` WHERE id_empleado = ? AND id_leccion = ?`;
+    sql += ` WHERE id_empleado = ? AND id_leccion = ?`;
     params.push(idEmpleado, idLeccion);
 
-    const [result] = await db.execute(query, params);
+    const result = await db.query(sql, params);
 
     return {
-      affectedRows: result.affectedRows,
-      success: result.affectedRows > 0
+      affectedRows: result.affectedRows || 0,
+      success: (result.affectedRows || 0) > 0
     };
   } catch (error) {
     throw new Error(`Error actualizando progreso: ${error.message}`);
@@ -406,7 +399,7 @@ async function actualizarProgreso(idEmpleado, idLeccion, data) {
 async function calcularRankingEmpresa(idEmpresa, idEmpleado) {
   try {
     // Calcular promedio de progreso de todos los empleados
-    const query = `
+    const sql = `
       SELECT 
         COUNT(DISTINCT e.id_empleado) as totalEmpleados,
         SUM(CASE WHEN COALESCE(el.progresoGeneral, 0) > ? THEN 1 ELSE 0 END) as empleadosMayorProgreso
@@ -422,15 +415,15 @@ async function calcularRankingEmpresa(idEmpresa, idEmpleado) {
     `;
     
     // Obtener progreso del empleado actual
-    const progresoActual = await db.execute(
+    const progresoActual = await db.queryOne(
       `SELECT ROUND(AVG(CASE WHEN completado = 1 THEN 100 ELSE progreso END)) as progresoGeneral
        FROM empleado_lecciones WHERE id_empleado = ?`,
       [idEmpleado]
     );
     
-    const progresoEmpleado = progresoActual[0][0]?.progresoGeneral || 0;
+    const progresoEmpleado = progresoActual?.progresoGeneral || 0;
     
-    const [rows] = await db.execute(query, [progresoEmpleado, idEmpresa]);
+    const rows = await db.query(sql, [progresoEmpleado, idEmpresa]);
     
     if (rows.length === 0 || rows[0].totalEmpleados === 0) {
       return 'N/A';
@@ -453,7 +446,7 @@ async function calcularRankingEmpresa(idEmpresa, idEmpleado) {
  */
 async function obtenerLeccionPorId(idLeccion) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_leccion,
         titulo,
@@ -466,18 +459,17 @@ async function obtenerLeccionPorId(idLeccion) {
       WHERE id_leccion = ? AND estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idLeccion]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idLeccion]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idLeccion: row.id_leccion,
-      titulo: row.titulo,
-      descripcion: row.descripcion,
-      modulo: row.modulo,
-      duracionMinutos: row.duracion_minutos,
-      dificultad: row.dificultad,
-      imagenUrl: row.imagen_url || null
+      idLeccion: result.id_leccion,
+      titulo: result.titulo,
+      descripcion: result.descripcion,
+      modulo: result.modulo,
+      duracionMinutos: result.duracion_minutos,
+      dificultad: result.dificultad,
+      imagenUrl: result.imagen_url || null
     };
   } catch (error) {
     throw new Error(`Error obteniendo lección: ${error.message}`);
@@ -491,7 +483,7 @@ async function obtenerLeccionPorId(idLeccion) {
  */
 async function obtenerContenidoLeccion(idLeccion) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_contenido,
         titulo,
@@ -501,7 +493,7 @@ async function obtenerContenidoLeccion(idLeccion) {
       WHERE id_leccion = ? AND estado = 1
       ORDER BY orden_contenido ASC
     `;
-    const [rows] = await db.execute(query, [idLeccion]);
+    const rows = await db.query(sql, [idLeccion]);
     
     return rows.map(row => ({
       idContenido: row.id_contenido,
@@ -535,7 +527,7 @@ async function inicializarTablaRespuestas() {
           ON DELETE CASCADE
       )
     `;
-    await db.execute(createTableQuery);
+    await db.query(createTableQuery);
   } catch (error) {
     throw new Error(`Error inicializando tabla: ${error.message}`);
   }
@@ -548,7 +540,7 @@ async function inicializarTablaRespuestas() {
  */
 async function obtenerQuizPorLeccion(idLeccion) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         q.id_quiz,
         q.id_leccion,
@@ -561,16 +553,15 @@ async function obtenerQuizPorLeccion(idLeccion) {
       GROUP BY q.id_quiz
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idLeccion]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idLeccion]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idQuiz: row.id_quiz,
-      idLeccion: row.id_leccion,
-      titulo: row.titulo,
-      puntajeAprobacion: row.puntaje_aprobacion,
-      totalPreguntas: row.totalPreguntas || 0
+      idQuiz: result.id_quiz,
+      idLeccion: result.id_leccion,
+      titulo: result.titulo,
+      puntajeAprobacion: result.puntaje_aprobacion,
+      totalPreguntas: result.totalPreguntas || 0
     };
   } catch (error) {
     throw new Error(`Error obteniendo quiz: ${error.message}`);
@@ -584,7 +575,7 @@ async function obtenerQuizPorLeccion(idLeccion) {
  */
 async function obtenerQuizPorId(idQuiz) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_quiz,
         id_leccion,
@@ -595,15 +586,14 @@ async function obtenerQuizPorId(idQuiz) {
       WHERE id_quiz = ? AND estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idQuiz]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idQuiz]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idQuiz: row.id_quiz,
-      idLeccion: row.id_leccion,
-      titulo: row.titulo,
-      puntajeAprobacion: row.puntaje_aprobacion
+      idQuiz: result.id_quiz,
+      idLeccion: result.id_leccion,
+      titulo: result.titulo,
+      puntajeAprobacion: result.puntaje_aprobacion
     };
   } catch (error) {
     throw new Error(`Error obteniendo quiz: ${error.message}`);
@@ -630,13 +620,13 @@ async function obtenerPreguntasQuiz(idQuiz, incluirRespuesta = false) {
       explicacion
     `;
     
-    const query = `
+    const sql = `
       SELECT ${campos}
       FROM quiz_preguntas
       WHERE id_quiz = ? AND estado = 1
       ORDER BY id_pregunta ASC
     `;
-    const [rows] = await db.execute(query, [idQuiz]);
+    const rows = await db.query(sql, [idQuiz]);
     
     return rows.map(row => ({
       idPregunta: row.id_pregunta,
@@ -664,7 +654,7 @@ async function obtenerPreguntasQuiz(idQuiz, incluirRespuesta = false) {
  */
 async function guardarResultadoQuiz(idEmpleado, idQuiz, data) {
   try {
-    const query = `
+    const sql = `
       INSERT INTO empleado_quiz_resultados (
         id_empleado,
         id_quiz,
@@ -674,7 +664,7 @@ async function guardarResultadoQuiz(idEmpleado, idQuiz, data) {
         fecha_respuesta
       ) VALUES (?, ?, ?, ?, ?, NOW())
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(sql, [
       idEmpleado,
       idQuiz,
       data.puntaje,
@@ -684,7 +674,7 @@ async function guardarResultadoQuiz(idEmpleado, idQuiz, data) {
     
     return {
       idResultado: result.insertId,
-      success: result.affectedRows > 0
+      success: (result.affectedRows || 0) > 0
     };
   } catch (error) {
     throw new Error(`Error guardando resultado: ${error.message}`);
@@ -699,7 +689,7 @@ async function guardarResultadoQuiz(idEmpleado, idQuiz, data) {
  */
 async function obtenerUltimoResultadoQuiz(idEmpleado, idQuiz) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_resultado,
         id_empleado,
@@ -713,18 +703,17 @@ async function obtenerUltimoResultadoQuiz(idEmpleado, idQuiz) {
       ORDER BY fecha_respuesta DESC
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idEmpleado, idQuiz]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idEmpleado, idQuiz]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idResultado: row.id_resultado,
-      idEmpleado: row.id_empleado,
-      idQuiz: row.id_quiz,
-      puntaje: row.puntaje,
-      aprobado: row.aprobado === 1,
-      respuestas: JSON.parse(row.respuestas),
-      fechaRespuesta: row.fecha_respuesta
+      idResultado: result.id_resultado,
+      idEmpleado: result.id_empleado,
+      idQuiz: result.id_quiz,
+      puntaje: result.puntaje,
+      aprobado: result.aprobado === 1,
+      respuestas: JSON.parse(result.respuestas),
+      fechaRespuesta: result.fecha_respuesta
     };
   } catch (error) {
     throw new Error(`Error obteniendo resultado: ${error.message}`);
@@ -739,7 +728,7 @@ async function obtenerUltimoResultadoQuiz(idEmpleado, idQuiz) {
  */
 async function guardarRespuestaQuiz(idResultado, data) {
   try {
-    const query = `
+    const sql = `
       INSERT INTO empleado_quiz_respuestas (
         id_resultado,
         id_pregunta,
@@ -747,7 +736,7 @@ async function guardarRespuestaQuiz(idResultado, data) {
         correcta
       ) VALUES (?, ?, ?, ?)
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(sql, [
       idResultado,
       data.idPregunta,
       data.respuestaUsuario,
@@ -756,7 +745,7 @@ async function guardarRespuestaQuiz(idResultado, data) {
     
     return {
       idRespuesta: result.insertId,
-      success: result.affectedRows > 0
+      success: (result.affectedRows || 0) > 0
     };
   } catch (error) {
     throw new Error(`Error guardando respuesta: ${error.message}`);
@@ -770,7 +759,7 @@ async function guardarRespuestaQuiz(idResultado, data) {
  */
 async function obtenerRespuestasResultado(idResultado) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         qr.id_respuesta,
         qr.id_pregunta,
@@ -783,7 +772,7 @@ async function obtenerRespuestasResultado(idResultado) {
       WHERE qr.id_resultado = ?
       ORDER BY qr.id_pregunta ASC
     `;
-    const [rows] = await db.execute(query, [idResultado]);
+    const rows = await db.query(sql, [idResultado]);
     
     return rows.map(row => ({
       idRespuesta: row.id_respuesta,
@@ -814,12 +803,12 @@ async function crearInsigniaSiNoExiste(idEmpleado, nombre, descripcion) {
       WHERE id_empleado = ? AND nombre = ? AND estado = 1
       LIMIT 1
     `;
-    const [checkRows] = await db.execute(checkQuery, [idEmpleado, nombre]);
+    const checkResult = await db.queryOne(checkQuery, [idEmpleado, nombre]);
     
-    if (checkRows.length > 0) {
+    if (checkResult) {
       // Ya existe
       return {
-        idInsignia: checkRows[0].id_insignia,
+        idInsignia: checkResult.id_insignia,
         creada: false
       };
     }
@@ -834,7 +823,7 @@ async function crearInsigniaSiNoExiste(idEmpleado, nombre, descripcion) {
         fecha_obtenida
       ) VALUES (?, ?, ?, 1, NOW())
     `;
-    const [result] = await db.execute(insertQuery, [idEmpleado, nombre, descripcion]);
+    const result = await db.query(insertQuery, [idEmpleado, nombre, descripcion]);
     
     return {
       idInsignia: result.insertId,

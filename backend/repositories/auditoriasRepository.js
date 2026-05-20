@@ -18,7 +18,7 @@ async function obtenerEmpresaPorUsuario(idUsuario) {
       WHERE id_usuario = ? AND estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idUsuario]);
+    const rows = await db.query(query, [idUsuario]);
     return rows.length > 0 ? rows[0] : null;
   } catch (error) {
     throw new Error(`Error obteniendo empresa: ${error.message}`);
@@ -43,7 +43,7 @@ async function crearAuditoria(idEmpresa, data) {
         detalle_resultado
       ) VALUES (?, ?, ?, ?, ?, ?)
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(query, [
       idEmpresa,
       data.target,
       data.tipo,
@@ -110,7 +110,7 @@ async function listarAuditorias(idEmpresa, filtros) {
     const offset = (currentPage - 1) * limit;
     query += ` LIMIT ${limit} OFFSET ${offset}`;
 
-    const [rows] = await db.execute(query, params);
+    const rows = await db.query(query, params);
 
     // Mapear salida
     return rows.map(row => ({
@@ -164,7 +164,7 @@ async function contarAuditorias(idEmpresa, filtros) {
       params.push(searchTerm, searchTerm);
     }
 
-    const [rows] = await db.execute(query, params);
+    const rows = await db.query(query, params);
     return rows[0].total || 0;
   } catch (error) {
     throw new Error(`Error contando auditorías: ${error.message}`);
@@ -192,7 +192,7 @@ async function obtenerAuditoriaPorId(idAuditoria, idEmpresa) {
       WHERE id_auditoria = ? AND id_empresa = ? AND estado = 1
     `;
 
-    const [rows] = await db.execute(query, [idAuditoria, idEmpresa]);
+    const rows = await db.query(query, [idAuditoria, idEmpresa]);
 
     if (rows.length === 0) {
       return null;
@@ -227,7 +227,7 @@ async function eliminarAuditoria(idAuditoria, idEmpresa) {
       WHERE id_auditoria = ? AND id_empresa = ? AND estado = 1
     `;
 
-    const [result] = await db.execute(query, [idAuditoria, idEmpresa]);
+    const result = await db.query(query, [idAuditoria, idEmpresa]);
 
     return {
       affectedRows: result.affectedRows,
@@ -258,7 +258,7 @@ async function crearResultadoAuditoria(idAuditoria, data) {
         servicios_protegidos
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(query, [
       idAuditoria,
       data.puntuacionSeguridad,
       data.nivelRiesgo,
@@ -290,7 +290,7 @@ async function crearHallazgo(idAuditoria, data) {
         severidad
       ) VALUES (?, ?, ?, ?)
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(query, [
       idAuditoria,
       data.titulo,
       data.descripcion,
@@ -323,7 +323,7 @@ async function obtenerResultadoAuditoria(idAuditoria) {
       WHERE id_auditoria = ?
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idAuditoria]);
+    const rows = await db.query(query, [idAuditoria]);
     
     if (rows.length === 0) return null;
     
@@ -365,7 +365,7 @@ async function obtenerHallazgosAuditoria(idAuditoria) {
           WHEN 'informativo' THEN 3
         END
     `;
-    const [rows] = await db.execute(query, [idAuditoria]);
+    const rows = await db.query(query, [idAuditoria]);
     
     return rows.map(row => ({
       idHallazgo: row.id_hallazgo,
@@ -396,7 +396,7 @@ async function crearAuditoriaProceso(idEmpresa, data) {
         fecha_inicio
       ) VALUES (?, ?, ?, 'pending', 'procesando', NOW())
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(query, [
       idEmpresa,
       data.target,
       data.tipo
@@ -439,7 +439,7 @@ async function actualizarAuditoriaProceso(idAuditoria, idEmpresa, data) {
     query += ` WHERE id_auditoria = ? AND id_empresa = ?`;
     params.push(idAuditoria, idEmpresa);
 
-    const [result] = await db.execute(query, params);
+    const result = await db.query(query, params);
 
     return {
       affectedRows: result.affectedRows,
@@ -469,7 +469,7 @@ async function crearHallazgosAuditoria(idAuditoria, hallazgos) {
           severidad
         ) VALUES (?, ?, ?, ?)
       `;
-      const [result] = await db.execute(query, [
+      const result = await db.query(query, [
         idAuditoria,
         hallazgo.titulo,
         hallazgo.descripcion,

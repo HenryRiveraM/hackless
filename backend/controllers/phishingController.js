@@ -6,7 +6,8 @@ const phishingService = require('../services/phishingService');
  */
 async function obtenerCampanas(req, res) {
   try {
-    const campanas = await phishingService.obtenerCampanas();
+    const idUsuario = req.user.id_usuario;
+    const campanas = await phishingService.obtenerCampanas(idUsuario);
     res.status(200).json({
       success: true,
       data: campanas

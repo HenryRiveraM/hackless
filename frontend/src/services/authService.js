@@ -65,6 +65,8 @@ async function login(email, password) {
 
     if (response.data?.token) {
       storeSession(response.data);
+      // Refrescar datos del usuario para asegurar que tiene empresa
+      await refreshCurrentUser();
     }
 
     return response;

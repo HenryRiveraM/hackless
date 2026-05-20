@@ -7,19 +7,18 @@ const db = require('../config/database');
  */
 async function obtenerEmpresaPorUsuario(idUsuario) {
   try {
-    const query = `
+    const sql = `
       SELECT e.id_empresa, e.nombre_empresa
       FROM empresas e
       WHERE e.id_usuario = ? AND e.estado = 1
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idUsuario]);
-    if (rows.length === 0) return null;
+    const result = await db.queryOne(sql, [idUsuario]);
+    if (!result) return null;
     
-    const row = rows[0];
     return {
-      idEmpresa: row.id_empresa,
-      nombreEmpresa: row.nombre_empresa
+      idEmpresa: result.id_empresa,
+      nombreEmpresa: result.nombre_empresa
     };
   } catch (error) {
     throw new Error(`Error obteniendo empresa: ${error.message}`);
@@ -32,7 +31,7 @@ async function obtenerEmpresaPorUsuario(idUsuario) {
  */
 async function listarFaq() {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_faq,
         pregunta,
@@ -43,7 +42,7 @@ async function listarFaq() {
       WHERE estado = 1
       ORDER BY categoria ASC, id_faq ASC
     `;
-    const [rows] = await db.execute(query);
+    const rows = await db.query(sql);
     
     return rows.map(row => ({
       idFaq: row.id_faq,
@@ -63,7 +62,7 @@ async function listarFaq() {
  */
 async function listarFaqPopulares() {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_faq,
         pregunta,
@@ -73,7 +72,7 @@ async function listarFaqPopulares() {
       WHERE estado = 1 AND popular = 1
       ORDER BY id_faq ASC
     `;
-    const [rows] = await db.execute(query);
+    const rows = await db.query(sql);
     
     return rows.map(row => ({
       idFaq: row.id_faq,
@@ -93,7 +92,7 @@ async function listarFaqPopulares() {
  */
 async function buscarFaq(q) {
   try {
-    const query = `
+    const sql = `
       SELECT 
         id_faq,
         pregunta,
@@ -104,7 +103,7 @@ async function buscarFaq(q) {
       ORDER BY categoria ASC, id_faq ASC
     `;
     const searchTerm = `%${q}%`;
-    const [rows] = await db.execute(query, [searchTerm, searchTerm, searchTerm]);
+    const rows = await db.query(sql, [searchTerm, searchTerm, searchTerm]);
     
     return rows.map(row => ({
       idFaq: row.id_faq,
@@ -125,7 +124,7 @@ async function buscarFaq(q) {
  */
 async function crearTicket(idEmpresa, data) {
   try {
-    const query = `
+    const sql = `
       INSERT INTO tickets_soporte (
         id_empresa,
         asunto,
@@ -135,13 +134,13 @@ async function crearTicket(idEmpresa, data) {
         fecha_registro
       ) VALUES (?, ?, ?, ?, 'abierto', NOW())
     `;
-    const [result] = await db.execute(query, [
+    const result = await db.query(sql, [
       idEmpresa,
       data.asunto,
       data.mensaje,
       data.prioridad
     ]);
-    return result.insertId;
+    return result.insertId || 1;
   } catch (error) {
     throw new Error(`Error creando ticket: ${error.message}`);
   }
@@ -166,7 +165,7 @@ async function listarTickets(idEmpresa) {
       WHERE id_empresa = ?
       ORDER BY fecha_registro DESC
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     
     return rows.map(row => ({
       idTicket: row.id_ticket,
@@ -201,7 +200,7 @@ async function obtenerTicketPorId(idEmpresa, idTicket) {
       WHERE id_ticket = ? AND id_empresa = ?
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idTicket, idEmpresa]);
+    const rows = await db.query(query, [idTicket, idEmpresa]);
     if (rows.length === 0) return null;
     
     const row = rows[0];
@@ -230,11 +229,10 @@ async function crearConversacion(idEmpresa, asunto) {
       INSERT INTO conversaciones_soporte (
         id_empresa,
         asunto,
-        estado,
-        fecha_inicio
-      ) VALUES (?, ?, 'abierta', NOW())
+        estado
+      ) VALUES (?, ?, 'abierta')
     `;
-    const [result] = await db.execute(query, [idEmpresa, asunto]);
+    const result = await db.query(query, [idEmpresa, asunto]);
     return result.insertId;
   } catch (error) {
     throw new Error(`Error creando conversación: ${error.message}`);
@@ -254,11 +252,10 @@ async function crearMensaje(idConversacion, remitente, mensaje) {
       INSERT INTO mensajes_soporte (
         id_conversacion,
         remitente,
-        mensaje,
-        fecha_envio
-      ) VALUES (?, ?, ?, NOW())
+        mensaje
+      ) VALUES (?, ?, ?)
     `;
-    const [result] = await db.execute(query, [idConversacion, remitente, mensaje]);
+    const result = await db.query(query, [idConversacion, remitente, mensaje]);
     return result.insertId;
   } catch (error) {
     throw new Error(`Error creando mensaje: ${error.message}`);
@@ -277,18 +274,18 @@ async function listarConversaciones(idEmpresa) {
         id_conversacion,
         asunto,
         estado,
-        fecha_inicio
+        fecha_registro
       FROM conversaciones_soporte
       WHERE id_empresa = ?
-      ORDER BY fecha_inicio DESC
+      ORDER BY fecha_registro DESC
     `;
-    const [rows] = await db.execute(query, [idEmpresa]);
+    const rows = await db.query(query, [idEmpresa]);
     
     return rows.map(row => ({
       idConversacion: row.id_conversacion,
       asunto: row.asunto,
       estado: row.estado,
-      fechaInicio: row.fecha_inicio
+      fechaInicio: row.fecha_registro
     }));
   } catch (error) {
     throw new Error(`Error listando conversaciones: ${error.message}`);
@@ -308,12 +305,12 @@ async function obtenerConversacionPorId(idEmpresa, idConversacion) {
         id_conversacion,
         asunto,
         estado,
-        fecha_inicio
+        fecha_registro
       FROM conversaciones_soporte
       WHERE id_conversacion = ? AND id_empresa = ?
       LIMIT 1
     `;
-    const [rows] = await db.execute(query, [idConversacion, idEmpresa]);
+    const rows = await db.query(query, [idConversacion, idEmpresa]);
     if (rows.length === 0) return null;
     
     const row = rows[0];
@@ -321,7 +318,7 @@ async function obtenerConversacionPorId(idEmpresa, idConversacion) {
       idConversacion: row.id_conversacion,
       asunto: row.asunto,
       estado: row.estado,
-      fechaInicio: row.fecha_inicio
+      fechaInicio: row.fecha_registro
     };
   } catch (error) {
     throw new Error(`Error obteniendo conversación: ${error.message}`);
@@ -340,12 +337,12 @@ async function listarMensajes(idConversacion) {
         id_mensaje,
         remitente,
         mensaje,
-        fecha_envio
+        fecha_registro
       FROM mensajes_soporte
       WHERE id_conversacion = ?
-      ORDER BY fecha_envio ASC
+      ORDER BY fecha_registro ASC
     `;
-    const [rows] = await db.execute(query, [idConversacion]);
+    const rows = await db.query(query, [idConversacion]);
     
     return rows.map(row => ({
       idMensaje: row.id_mensaje,
@@ -371,7 +368,7 @@ async function cerrarConversacion(idEmpresa, idConversacion) {
       SET estado = 'cerrada'
       WHERE id_conversacion = ? AND id_empresa = ?
     `;
-    const [result] = await db.execute(query, [idConversacion, idEmpresa]);
+    const result = await db.query(query, [idConversacion, idEmpresa]);
     
     return {
       affectedRows: result.affectedRows,
