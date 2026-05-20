@@ -4,7 +4,13 @@
  * Fallback a respuestas mock si hay error o sin API key
  */
 
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+let GoogleGenerativeAI;
+try {
+  GoogleGenerativeAI = require('@google/generative-ai').GoogleGenerativeAI;
+} catch (error) {
+  console.warn('Google Generative AI módulo no disponible, usando mock responses');
+  GoogleGenerativeAI = null;
+}
 
 let genAI = null;
 
@@ -12,7 +18,7 @@ let genAI = null;
  * Inicializar cliente Gemini
  */
 function inicializarGenAI() {
-  if (!genAI) {
+  if (!genAI && GoogleGenerativeAI) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
       genAI = new GoogleGenerativeAI(apiKey);

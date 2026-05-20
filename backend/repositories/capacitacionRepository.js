@@ -871,6 +871,5 @@ module.exports = {
   guardarRespuestaQuiz,
   obtenerRespuestasResultado,
   obtenerUltimoResultadoQuiz,
-  marcarLeccionCompletada,
   crearInsigniaSiNoExiste
 };
