@@ -78,7 +78,7 @@ export default function RegisterPage() {
       } else {
         setError(result.message || 'Error al crear la empresa');
       }
-    } catch (err) {
+    } catch {
       setError('Error inesperado. Intenta más tarde.');
     } finally {
       setLoading(false);

@@ -502,7 +502,7 @@ async function obtenerDetalleEmpleado(idEmpleado) {
 async function obtenerEmpresaPorUsuario(idUsuario) {
   try {
     const query = `
-      SELECT id_empresa FROM usuarios WHERE id_usuario = ?
+      SELECT id_empresa FROM empresas WHERE id_usuario = ? AND estado = 1
     `;
     const [rows] = await db.execute(query, [idUsuario]);
     if (rows.length === 0) return null;

@@ -10,8 +10,7 @@ async function obtenerEmpresaPorUsuario(idUsuario) {
     const query = `
       SELECT e.id_empresa, e.nombre_empresa
       FROM empresas e
-      INNER JOIN usuarios u ON u.id_empresa = e.id_empresa
-      WHERE u.id_usuario = ? AND e.estado = 1
+      WHERE e.id_usuario = ? AND e.estado = 1
       LIMIT 1
     `;
     const [rows] = await db.execute(query, [idUsuario]);
