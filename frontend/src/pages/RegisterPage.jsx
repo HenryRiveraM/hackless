@@ -5,14 +5,28 @@ import * as authService from '../services/authService';
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
+    nombre_empresa: '',
+    industria: '',
+    nit: '',
+    nombre_admin: '',
+    email_corporativo: '',
     password: '',
     confirmPassword: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const industries = [
+    'Technology',
+    'Finance',
+    'Healthcare',
+    'Retail',
+    'Manufacturing',
+    'Education',
+    'Government',
+    'Other'
+  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -28,7 +42,7 @@ export default function RegisterPage() {
     setSuccess('');
 
     // Validaciones básicas
-    if (!formData.nombre || !formData.email || !formData.password) {
+    if (!formData.nombre_empresa || !formData.industria || !formData.nit || !formData.nombre_admin || !formData.email_corporativo || !formData.password) {
       setError('Por favor completa todos los campos requeridos');
       return;
     }
@@ -46,19 +60,23 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const result = await authService.register(
-        formData.nombre,
-        formData.email,
-        formData.password
+      const result = await authService.registerCompany(
+        formData.nombre_empresa,
+        formData.industria,
+        formData.nit,
+        formData.nombre_admin,
+        formData.email_corporativo,
+        formData.password,
+        formData.confirmPassword
       );
 
       if (result.success) {
-        setSuccess('Cuenta creada exitosamente. Redirigiendo...');
+        setSuccess('Empresa registrada exitosamente. Redirigiendo...');
         setTimeout(() => {
           navigate('/login');
         }, 1500);
       } else {
-        setError(result.message || 'Error al crear la cuenta');
+        setError(result.message || 'Error al crear la empresa');
       }
     } catch (err) {
       setError('Error inesperado. Intenta más tarde.');
@@ -147,8 +165,8 @@ export default function RegisterPage() {
 
             <div className="mt-8 p-6 bg-[#f2f4f6] rounded-xl border-l-4 border-[#004ac6]">
               <p className="text-sm leading-relaxed text-[#434655] italic">
-                “We treat your data with the same intensity we treat threats.
-                Your privacy is our primary mandate.”
+                "We treat your data with the same intensity we treat threats.
+                Your privacy is our primary mandate."
               </p>
             </div>
           </section>
@@ -177,26 +195,54 @@ export default function RegisterPage() {
               )}
 
               <Input
-                label="Nombre Completo"
-                placeholder="Tu nombre completo"
-                name="nombre"
-                value={formData.nombre}
+                label="Company Name"
+                placeholder="e.g. Acme Corp"
+                name="nombre_empresa"
+                value={formData.nombre_empresa}
+                onChange={handleInputChange}
+                disabled={loading}
+              />
+
+              <Select
+                label="Industry"
+                name="industria"
+                value={formData.industria}
+                onChange={handleInputChange}
+                options={industries}
+                disabled={loading}
+              />
+
+              <Input
+                label="NIT/ID Number"
+                placeholder="Tax Identification"
+                name="nit"
+                value={formData.nit}
                 onChange={handleInputChange}
                 disabled={loading}
               />
 
               <Input
-                label="Email"
-                placeholder="tu@email.com"
-                type="email"
-                name="email"
-                value={formData.email}
+                label="Admin Name"
+                placeholder="Full legal name"
+                name="nombre_admin"
+                value={formData.nombre_admin}
                 onChange={handleInputChange}
                 disabled={loading}
               />
 
+              <Input
+                label="Corporate Email"
+                placeholder="admin@company.com"
+                type="email"
+                name="email_corporativo"
+                value={formData.email_corporativo}
+                onChange={handleInputChange}
+                disabled={loading}
+                className="md:col-span-2"
+              />
+
               <PasswordInput
-                label="Contraseña"
+                label="Password"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
@@ -204,7 +250,7 @@ export default function RegisterPage() {
               />
 
               <PasswordInput
-                label="Confirmar Contraseña"
+                label="Confirm Password"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
@@ -298,6 +344,29 @@ function Input({ label, placeholder, type = "text", className = "", name, value,
         disabled={disabled}
         required
       />
+    </div>
+  );
+}
+
+function Select({ label, name, value, onChange, options, disabled = false }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="text-sm font-semibold text-[#434655]">{label}</label>
+      <select
+        className="w-full px-4 py-3 rounded-xl border border-[#737686] hover:border-[#004ac6] focus:border-[#004ac6] focus:ring-2 focus:ring-[#004ac6]/20 transition-all outline-none bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+        name={name}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        required
+      >
+        <option value="">Select an industry</option>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
