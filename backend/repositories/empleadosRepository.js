@@ -35,9 +35,10 @@ async function obtenerPorEmpresa({ idEmpresa, busqueda, departamento, estadoCapa
     params.push(estadoCapacitacion);
   }
   
-  const offset = (page - 1) * pageSize;
-  sql += ` ORDER BY fecha_registro DESC LIMIT ? OFFSET ?`;
-  params.push(pageSize, offset);
+  const limit = Math.max(1, parseInt(pageSize, 10) || 10);
+  const currentPage = Math.max(1, parseInt(page, 10) || 1);
+  const offset = (currentPage - 1) * limit;
+  sql += ` ORDER BY fecha_registro DESC LIMIT ${limit} OFFSET ${offset}`;
   
   return query(sql, params);
 }

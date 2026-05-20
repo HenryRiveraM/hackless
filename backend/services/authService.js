@@ -169,13 +169,17 @@ async function login(email, password) {
     { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
   );
   
+  const company = await companyRepository.findByUserId(user.id_usuario);
+
   return {
     token,
     user: {
       id_usuario: user.id_usuario,
       nombre: user.nombre,
       email: user.email,
-      rol: user.rol
+      rol: user.rol,
+      id_empresa: company?.id_empresa || null,
+      nombre_empresa: company?.nombre_empresa || null
     }
   };
 }
@@ -206,12 +210,15 @@ async function obtenerUsuario(idUsuario) {
     throw new Error('Usuario no existe');
   }
   
+  const company = await companyRepository.findByUserId(idUsuario);
+
   return {
     id_usuario: user.id_usuario,
     nombre: user.nombre,
     email: user.email,
     rol: user.rol,
-    id_empresa: user.id_empresa
+    id_empresa: company?.id_empresa || null,
+    nombre_empresa: company?.nombre_empresa || null
   };
 }
 

@@ -10,8 +10,7 @@ async function obtenerEmpresaPorUsuario(idUsuario) {
     const query = `
       SELECT e.id_empresa, e.nombre_empresa
       FROM empresas e
-      INNER JOIN usuarios u ON u.id_empresa = e.id_empresa
-      WHERE u.id_usuario = ? AND e.estado = 1
+      WHERE e.id_usuario = ? AND e.estado = 1
       LIMIT 1
     `;
     const [rows] = await db.execute(query, [idUsuario]);
@@ -35,7 +34,7 @@ async function obtenerEmpresaPorUsuario(idUsuario) {
 async function obtenerUsuarioPorId(idUsuario) {
   try {
     const query = `
-      SELECT id_usuario, email, id_empresa
+      SELECT id_usuario, email
       FROM usuarios
       WHERE id_usuario = ?
       LIMIT 1
@@ -46,8 +45,7 @@ async function obtenerUsuarioPorId(idUsuario) {
     const row = rows[0];
     return {
       idUsuario: row.id_usuario,
-      email: row.email,
-      idEmpresa: row.id_empresa
+      email: row.email
     };
   } catch (error) {
     throw new Error(`Error obteniendo usuario: ${error.message}`);
