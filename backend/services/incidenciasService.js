@@ -139,8 +139,7 @@ async function obtenerIncidencia(idUsuario, idIncidencia) {
     idActivo: a.id_activo,
     nombreActivo: a.nombre_activo,
     descripcion: a.descripcion,
-    tipoActivo: a.tipo_activo,
-    fechaRegistro: a.fecha_registro
+    tipoActivo: a.tipo_activo
   }));
 
   // Formatear timeline
@@ -149,8 +148,7 @@ async function obtenerIncidencia(idUsuario, idIncidencia) {
     titulo: t.titulo,
     descripcion: t.descripcion,
     fechaEvento: t.fecha_evento,
-    tipoEvento: t.tipo_evento,
-    fechaRegistro: t.fecha_registro
+    tipoEvento: t.tipo_evento
   }));
 
   // Formatear acciones
@@ -159,8 +157,7 @@ async function obtenerIncidencia(idUsuario, idIncidencia) {
     accion: acc.accion,
     tipoAccion: acc.tipo_accion,
     ejecutada: acc.ejecutada === 1,
-    fechaEjecucion: acc.fecha_ejecucion,
-    fechaRegistro: acc.fecha_registro
+    fechaEjecucion: acc.fecha_ejecucion
   }));
 
   return respuesta;

@@ -20,6 +20,10 @@ async function listarIncidencias({
   page = 1,
   pageSize = 10
 }) {
+  // Convertir a enteros para LIMIT/OFFSET
+  const safePageSize = parseInt(pageSize) || 10;
+  const safePage = parseInt(page) || 1;
+  
   let sql = `
     SELECT id_incidencia, codigo_incidencia, titulo, severidad, estado_incidencia, 
            resumen_evento, ip_origen, fecha_registro, ultima_actualizacion
@@ -51,9 +55,9 @@ async function listarIncidencias({
   sql += ' ORDER BY fecha_registro DESC';
 
   // Paginación
-  const offset = (page - 1) * pageSize;
+  const offset = (safePage - 1) * safePageSize;
   sql += ' LIMIT ? OFFSET ?';
-  params.push(pageSize, offset);
+  params.push(safePageSize, offset);
 
   return await db.query(sql, params);
 }
@@ -309,10 +313,10 @@ async function eliminarLogico(idIncidencia, idEmpresa) {
 // Listar activos de una incidencia
 async function listarActivos(idIncidencia) {
   const sql = `
-    SELECT id_activo, id_incidencia, nombre_activo, descripcion, tipo_activo, fecha_registro
+    SELECT id_activo, id_incidencia, nombre_activo, descripcion, tipo_activo
     FROM incidencia_activos 
     WHERE id_incidencia = ? AND estado = 1
-    ORDER BY fecha_registro DESC
+    ORDER BY id_activo DESC
   `;
   return await db.query(sql, [idIncidencia]);
 }
@@ -320,7 +324,7 @@ async function listarActivos(idIncidencia) {
 // Listar timeline de una incidencia
 async function listarTimeline(idIncidencia) {
   const sql = `
-    SELECT id_timeline, id_incidencia, titulo, descripcion, fecha_evento, tipo_evento, fecha_registro
+    SELECT id_timeline, id_incidencia, titulo, descripcion, fecha_evento, tipo_evento
     FROM incidencia_timeline 
     WHERE id_incidencia = ? AND estado = 1
     ORDER BY fecha_evento DESC
@@ -331,10 +335,10 @@ async function listarTimeline(idIncidencia) {
 // Listar acciones de una incidencia
 async function listarAcciones(idIncidencia) {
   const sql = `
-    SELECT id_accion, id_incidencia, accion, tipo_accion, ejecutada, fecha_ejecucion, fecha_registro
+    SELECT id_accion, id_incidencia, accion, tipo_accion, ejecutada, fecha_ejecucion
     FROM incidencia_acciones 
     WHERE id_incidencia = ? AND estado = 1
-    ORDER BY fecha_registro DESC
+    ORDER BY fecha_ejecucion DESC
   `;
   return await db.query(sql, [idIncidencia]);
 }

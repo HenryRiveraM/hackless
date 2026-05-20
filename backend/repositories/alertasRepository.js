@@ -54,9 +54,11 @@ async function listarAlertas({
   sql += ' ORDER BY fecha_alerta DESC';
 
   // Paginación
-  const offset = (page - 1) * pageSize;
+  const safePageSize = parseInt(pageSize) || 10;
+  const safePage = parseInt(page) || 1;
+  const offset = (safePage - 1) * safePageSize;
   sql += ' LIMIT ? OFFSET ?';
-  params.push(pageSize, offset);
+  params.push(safePageSize, offset);
 
   return await db.query(sql, params);
 }
