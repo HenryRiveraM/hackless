@@ -14,7 +14,7 @@ try {
 
 let genAI = null;
 
-/**
+  /**
  * Inicializar cliente Gemini
  */
 function inicializarGenAI() {
@@ -55,7 +55,7 @@ Si necesita asistencia personalizada, sugiere crear un ticket de soporte.
 Mantén un tono de ayuda y disponibilidad.`;
 
     // Llamar a Gemini
-    const model = genAIClient.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
+    const model = genAIClient.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const respuesta = response.text();
