@@ -1,25 +1,24 @@
+import { request } from './apiClient';
 
-const API_URL = 'http://localhost:3000/api/auth';
+const TOKEN_KEY = 'token';
+const USER_KEY = 'user';
 
-/**
- * Registrar nueva empresa
- * @param {string} nombre_empresa - Nombre de la empresa
- * @param {string} industria - Industria
- * @param {string} nit - NIT/ID de la empresa
- * @param {string} nombre_admin - Nombre del administrador
- * @param {string} email_corporativo - Email corporativo
- * @param {string} password - Contraseña
- * @param {string} confirmPassword - Confirmación de contraseña
- * @returns {Promise<{success, message, company}>}
- */
+function storeSession({ token, user }) {
+  if (token) {
+    localStorage.setItem(TOKEN_KEY, token);
+  }
+
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  }
+}
+
 async function registerCompany(nombre_empresa, industria, nit, nombre_admin, email_corporativo, password, confirmPassword) {
   try {
-    const response = await fetch(`${API_URL}/register-company`, {
+    const response = await request('/auth/register-company', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+      auth: false,
+      body: {
         nombre_empresa,
         industria,
         nit,
@@ -27,20 +26,10 @@ async function registerCompany(nombre_empresa, industria, nit, nombre_admin, ema
         email_corporativo,
         password,
         confirmPassword,
-      }),
+      },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Error en el registro de empresa');
-    }
-
-    if (data.data && data.data.id_usuario) {
-      localStorage.setItem('user', JSON.stringify(data.data));
-    }
-
-    return data;
+    return response;
   } catch (error) {
     return {
       success: false,
@@ -49,34 +38,15 @@ async function registerCompany(nombre_empresa, industria, nit, nombre_admin, ema
   }
 }
 
-/**
- * Registrar nuevo usuario
- * @param {string} nombre - Nombre del usuario
- * @param {string} email - Email del usuario
- * @param {string} password - Contraseña
- * @returns {Promise<{success, message, user}>}
- */
 async function register(nombre, email, password) {
   try {
-    const response = await fetch(`${API_URL}/register`, {
+    const response = await request('/auth/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nombre, email, password }),
+      auth: false,
+      body: { nombre, email, password },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Error en el registro');
-    }
-
-    if (data.data && data.data.id_usuario) {
-      localStorage.setItem('user', JSON.stringify(data.data));
-    }
-
-    return data;
+    return response;
   } catch (error) {
     return {
       success: false,
@@ -85,114 +55,83 @@ async function register(nombre, email, password) {
   }
 }
 
-/**
- * Login de usuario
- * @param {string} email - Email del usuario
- * @param {string} password - Contraseña
- * @returns {Promise<{success, message, token, user}>}
- */
 async function login(email, password) {
   try {
-    const response = await fetch(`${API_URL}/login`, {
+    const response = await request('/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
+      auth: false,
+      body: { email, password },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Error en el login');
+    if (response.data?.token) {
+      storeSession(response.data);
     }
 
-    if (data.data && data.data.token) {
-      localStorage.setItem('token', data.data.token);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
-    }
-
-    return data;
+    return response;
   } catch (error) {
     return {
       success: false,
       message: error.message,
     };
   }
+}
+
+async function refreshCurrentUser() {
+  const response = await request('/auth/me');
+  if (response.data) {
+    localStorage.setItem(USER_KEY, JSON.stringify(response.data));
+  }
+  return response.data;
 }
 
 function logout() {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
 }
 
-/**
- * Obtener token almacenado
- * @returns {string|null}
- */
 function getToken() {
-  return localStorage.getItem('token');
+  return localStorage.getItem(TOKEN_KEY);
 }
 
-/**
- * Obtener usuario almacenado
- * @returns {object|null}
- */
 function getUser() {
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+  const user = localStorage.getItem(USER_KEY);
+  if (!user) return null;
+
+  try {
+    return JSON.parse(user);
+  } catch {
+    logout();
+    return null;
+  }
 }
 
-/**
- * Verificar si el usuario está autenticado
- * @returns {boolean}
- */
 function isAuthenticated() {
-  return !!getToken();
+  return Boolean(getToken());
 }
 
-/**
- * Login con Google (preparado para futura implementación)
- * Requiere:
- * - GOOGLE_CLIENT_ID
- * - GOOGLE_CLIENT_SECRET
- * - GOOGLE_CALLBACK_URL
- */
 async function loginWithGoogle() {
-  try {
-    // TODO: Implementar Google OAuth cuando estén configuradas las credenciales
-    throw new Error('Login con Google aún no está configurado. Por favor, realiza login con email.');
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-    };
-  }
+  return {
+    success: false,
+    message: 'Login con Google aún no está configurado. Por favor, realiza login con email.',
+  };
 }
 
-/**
- * Login con SSO (preparado para futura implementación)
- */
 async function loginWithSSO() {
-  try {
-    // TODO: Implementar SSO cuando estén configuradas las credenciales
-    throw new Error('Login con SSO aún no está configurado. Por favor, realiza login con email.');
-  } catch (error) {
-    return {
-      success: false,
-      message: error.message,
-    };
-  }
+  return {
+    success: false,
+    message: 'Login con SSO aún no está configurado. Por favor, realiza login con email.',
+  };
 }
 
 export {
-  register,
-  registerCompany,
-  login,
-  logout,
   getToken,
   getUser,
   isAuthenticated,
+  login,
   loginWithGoogle,
   loginWithSSO,
+  logout,
+  refreshCurrentUser,
+  register,
+  registerCompany,
 };

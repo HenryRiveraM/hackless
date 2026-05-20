@@ -24,7 +24,7 @@ export default function LoginPage() {
       } else {
         setError(result.message || 'Error al iniciar sesión');
       }
-    } catch (err) {
+    } catch {
       setError('Error inesperado. Intenta más tarde.');
     } finally {
       setLoading(false);
