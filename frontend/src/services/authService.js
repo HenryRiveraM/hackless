@@ -2,6 +2,54 @@
 const API_URL = 'http://localhost:3000/api/auth';
 
 /**
+ * Registrar nueva empresa
+ * @param {string} nombre_empresa - Nombre de la empresa
+ * @param {string} industria - Industria
+ * @param {string} nit - NIT/ID de la empresa
+ * @param {string} nombre_admin - Nombre del administrador
+ * @param {string} email_corporativo - Email corporativo
+ * @param {string} password - Contraseña
+ * @param {string} confirmPassword - Confirmación de contraseña
+ * @returns {Promise<{success, message, company}>}
+ */
+async function registerCompany(nombre_empresa, industria, nit, nombre_admin, email_corporativo, password, confirmPassword) {
+  try {
+    const response = await fetch(`${API_URL}/register-company`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        nombre_empresa,
+        industria,
+        nit,
+        nombre_admin,
+        email_corporativo,
+        password,
+        confirmPassword,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error en el registro de empresa');
+    }
+
+    if (data.data && data.data.id_usuario) {
+      localStorage.setItem('user', JSON.stringify(data.data));
+    }
+
+    return data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message,
+    };
+  }
+}
+
+/**
  * Registrar nuevo usuario
  * @param {string} nombre - Nombre del usuario
  * @param {string} email - Email del usuario
@@ -139,6 +187,7 @@ async function loginWithSSO() {
 
 export {
   register,
+  registerCompany,
   login,
   logout,
   getToken,

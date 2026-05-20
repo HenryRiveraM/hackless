@@ -7,6 +7,8 @@
 var app = require('../app');
 var debug = require('debug')('backend:server');
 var http = require('http');
+var capacitacionRepository = require('../repositories/capacitacionRepository');
+var phishingRepository = require('../repositories/phishingRepository');
 
 /**
  * Get port from environment and store in Express.
@@ -20,6 +22,21 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+
+/**
+ * Inicializar tablas
+ */
+(async () => {
+  try {
+    await capacitacionRepository.inicializarTablaRespuestas();
+    console.log('Tabla empleado_quiz_respuestas inicializada correctamente');
+    
+    await phishingRepository.inicializarTablasPlantillas();
+    console.log('Tablas phishing inicializadas correctamente');
+  } catch (error) {
+    console.error('Error inicializando tablas:', error.message);
+  }
+})();
 
 /**
  * Listen on provided port, on all network interfaces.
