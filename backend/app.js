@@ -25,7 +25,7 @@ var phishingRouter = require('./routes/phishingRoutes');
 // Rate limiting para proteger endpoints de autenticación
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // máximo 5 intentos
+  max: 50, // máximo 50 intentos
   message: 'Demasiados intentos de acceso. Intente más tarde.',
   standardHeaders: true,
   legacyHeaders: false
@@ -34,7 +34,7 @@ const authLimiter = rateLimit({
 // Rate limiting general (más permisivo)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests
+  max: 500, // máximo 500 requests
   standardHeaders: true,
   legacyHeaders: false
 });
