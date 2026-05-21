@@ -37,7 +37,6 @@ export default function PhishingPage() {
   useEffect(() => {
     const id = window.setTimeout(load, 0);
     return () => window.clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(event) {

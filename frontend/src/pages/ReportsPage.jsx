@@ -54,7 +54,6 @@ export default function ReportsPage() {
   useEffect(() => {
     const id = window.setTimeout(loadReports, 0);
     return () => window.clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(event) {

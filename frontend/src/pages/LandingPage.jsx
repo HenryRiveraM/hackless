@@ -9,19 +9,19 @@ export default function LandingPage() {
 
           <div className="hidden md:flex items-center gap-8">
             <a className="text-sm font-bold text-[#004ac6] border-b-2 border-[#004ac6] pb-1" href="#">
-              Solutions
+              Soluciones
             </a>
             <a className="text-sm font-semibold text-[#434655] hover:text-[#004ac6]" href="#">
-              Training
+              Capacitación
             </a>
             <a className="text-sm font-semibold text-[#434655] hover:text-[#004ac6]" href="#">
-              Audit
+              Auditoria
             </a>
             <a className="text-sm font-semibold text-[#434655] hover:text-[#004ac6]" href="#">
-              Pricing
+              Precios
             </a>
             <a className="text-sm font-semibold text-[#434655] hover:text-[#004ac6]" href="#">
-              Company
+              Empresa
             </a>
           </div>
 
@@ -30,14 +30,14 @@ export default function LandingPage() {
               to="/login"
               className="hidden sm:block text-sm font-semibold text-[#434655] hover:bg-[#f2f4f6] px-4 py-2 rounded-xl"
             >
-              Login
+              Iniciar sesión
             </Link>
 
             <Link
               to="/login"
               className="bg-[#004ac6] text-white text-sm font-semibold px-6 py-2.5 rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-sm"
             >
-              Get Started
+              Empezar
             </Link>
           </div>
         </nav>

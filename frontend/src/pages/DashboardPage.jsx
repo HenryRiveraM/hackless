@@ -71,7 +71,7 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return <LoadingBlock label="Conectando con el backend..." />;
+    return <LoadingBlock label="Conectando..." />;
   }
 
   return (

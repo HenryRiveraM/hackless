@@ -64,7 +64,6 @@ export default function EmployeesPage() {
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (event) => {
